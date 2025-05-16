@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { LocalizationProvider, DatePicker, TimePicker } from "@mui/x-date-pickers";
+import {
+  LocalizationProvider,
+  DatePicker,
+  TimePicker,
+} from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import thLocale from "date-fns/locale/th";
 import {
@@ -27,6 +31,7 @@ export default function Home() {
   const [date, setSelectedDate] = useState(new Date());
   const [standbyTime, setStandbyTime] = useState(null);
   const [departTime, setDepartTime] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleTripFeeChange = (e) => {
     const fee = parseFloat(e.target.value) || 0;
@@ -36,6 +41,7 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const data = new FormData(e.target);
     const obj = Object.fromEntries(data.entries());
     obj.oil_claim = oilClaim;
@@ -47,17 +53,18 @@ export default function Home() {
 
     if (res.ok) {
       setSuccessDialogOpen(true);
-      setTripFee('');
-      setOilClaim('');
+      setTripFee("");
+      setOilClaim("");
       setSelectedDate(new Date());
-      setStandbyTime(null)
-      setDepartTime(null)
-      setBank('')
+      setStandbyTime(null);
+      setDepartTime(null);
+      setBank("");
       e.target.reset();
     } else {
       // handle error
       alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
     }
+    setIsSubmitting(false); // หยุดโหลด
   };
 
   const handlePasswordCheck = async () => {
@@ -126,7 +133,9 @@ export default function Home() {
               label="เลือกวันที่"
               value={date}
               onChange={(newValue) => setSelectedDate(newValue)}
-              renderInput={(params) => <TextField fullWidth {...params} required />}
+              renderInput={(params) => (
+                <TextField fullWidth {...params} required />
+              )}
             />
           </Box>
         </LocalizationProvider>
@@ -173,26 +182,36 @@ export default function Home() {
           margin="normal"
           required
         />
-        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={thLocale}>
-        <Box sx={{ mt: 1 }}>
-          <TimePicker 
-            label="เวลาสแตนบาย"
-            name="standby_time"
-            value={standbyTime}
-            onChange={(newValue) => setStandbyTime(newValue)}
-            renderInput={(params) => <TextField fullWidth margin="normal" required {...params} />}
-          />
+        <LocalizationProvider
+          dateAdapter={AdapterDateFns}
+          adapterLocale={thLocale}
+        >
+          <Box sx={{ mt: 1 }}>
+            <TimePicker
+              label="เวลาสแตนบาย"
+              name="standby_time"
+              value={standbyTime}
+              onChange={(newValue) => setStandbyTime(newValue)}
+              renderInput={(params) => (
+                <TextField fullWidth margin="normal" required {...params} />
+              )}
+            />
           </Box>
-          </LocalizationProvider>
-          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={thLocale}>
+        </LocalizationProvider>
+        <LocalizationProvider
+          dateAdapter={AdapterDateFns}
+          adapterLocale={thLocale}
+        >
           <Box sx={{ mt: 2 }}>
-          <TimePicker
-            label="ออกเดินทาง"
-            name="depart_time"
-            value={departTime}
-            onChange={(newValue) => setDepartTime(newValue)}
-            renderInput={(params) => <TextField fullWidth margin="normal" required {...params} />}
-          />
+            <TimePicker
+              label="ออกเดินทาง"
+              name="depart_time"
+              value={departTime}
+              onChange={(newValue) => setDepartTime(newValue)}
+              renderInput={(params) => (
+                <TextField fullWidth margin="normal" required {...params} />
+              )}
+            />
           </Box>
         </LocalizationProvider>
         <TextField
@@ -254,8 +273,14 @@ export default function Home() {
           margin="normal"
           required
         />
-        <Button variant="contained" type="submit" fullWidth sx={{ mt: 2 }}>
-          ส่งข้อมูล
+        <Button
+          variant="contained"
+          type="submit"
+          fullWidth
+          sx={{ mt: 2 }}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "กำลังส่ง..." : "ส่งข้อมูล"}
         </Button>
       </Box>
 
