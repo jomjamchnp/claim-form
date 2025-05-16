@@ -19,7 +19,7 @@ export default async (req, res) => {
     range,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [[
-      new Date().toLocaleString(),
+      new Date().toLocaleString('en-GB', { timeZone: 'UTC' }),
       data.date,
       data.name,
       data.car_no,
@@ -28,13 +28,13 @@ export default async (req, res) => {
       data.route,
       data.standby_round,
       data.standby_time,
-      data.departure_time,
-      data.note,
+      data.depart_time,
+      data.remark,
       data.trip_fee,
       data.oil_claim,
       data.bank,
-      data.bank_name,
-      data.bank_no
+      data.account_name,
+      data.account_number
     ]] }
   });
 
@@ -51,13 +51,13 @@ export default async (req, res) => {
 เส้นทาง: ${data.route}
 รอบเวลาสแตนบาย: ${data.standby_round}
 เวลาสแตนบาย: ${data.standby_time}
-ออกเดินทาง: ${data.departure_time}
-หมายเหตุ: ${data.note}
+ออกเดินทาง: ${data.depart_time}
+หมายเหตุ: ${data.remark}
 💸 ค่าเที่ยว: ${data.trip_fee} บาท
 💸 เบิกน้ำมัน: ${data.oil_claim} บาท
 🏦 บัญชี: ${data.bank}
-👤 ชื่อบัญชี: ${data.bank_name}
-🔢 เลขบัญชี: ${data.bank_no}
+👤 ชื่อบัญชี: ${data.account_name}
+🔢 เลขบัญชี: ${data.account_number}
 `;
 
   await fetch('https://api.line.me/v2/bot/message/push', {
