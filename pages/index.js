@@ -1,6 +1,7 @@
 import { useState } from "react";
-import Alert from '@mui/material/Alert';
-import CloseIcon from '@mui/icons-material/Close';
+import { LocalizationProvider, DatePicker, TimePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import thLocale from "date-fns/locale/th";
 import {
   Container,
   TextField,
@@ -15,16 +16,17 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Collapse,
-  IconButton
 } from "@mui/material";
 export default function Home() {
   const [tripFee, setTripFee] = useState("");
   const [oilClaim, setOilClaim] = useState("");
-  const [openDialog, setOpenDialog] = useState(true);
+  const [openDialog, setOpenDialog] = useState(false);
   const [inputPassword, setInputPassword] = useState("");
-  const [bank, setBank] = useState('');
+  const [bank, setBank] = useState("");
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [date, setSelectedDate] = useState(new Date());
+  const [standbyTime, setStandbyTime] = useState(null);
+  const [departTime, setDepartTime] = useState(null);
 
   const handleTripFeeChange = (e) => {
     const fee = parseFloat(e.target.value) || 0;
@@ -37,7 +39,6 @@ export default function Home() {
     const data = new FormData(e.target);
     const obj = Object.fromEntries(data.entries());
     obj.oil_claim = oilClaim;
-    console.log(obj)
     const res = await fetch("/api/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -45,16 +46,18 @@ export default function Home() {
     });
 
     if (res.ok) {
-        setSuccessDialogOpen(true);
-        setTripFee('');
-        setOilClaim('');
-        e.target.reset();
-      } else {
-        // handle error
-        alert('เกิดข้อผิดพลาดในการส่งข้อมูล');
-      }
-    };
-  
+      setSuccessDialogOpen(true);
+      setTripFee('');
+      setOilClaim('');
+      e.target.reset();
+    } else {
+      // handle error
+      alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
+      setSelectedDate(null);
+      setStandbyTime(null)
+      setDepartTime(null)
+    }
+  };
 
   const handlePasswordCheck = async () => {
     const res = await fetch("/api/verify-password", {
@@ -102,36 +105,120 @@ export default function Home() {
         component="form"
         onSubmit={handleSubmit}
         sx={{
-          overflowY: 'auto',
-          flexGrow: 1,       
+          overflowY: "auto",
+          flexGrow: 1,
           pr: 1,
-          '&::-webkit-scrollbar': { width: '8px' },
-          '&::-webkit-scrollbar-thumb': { backgroundColor: '#888', borderRadius: '4px' },
+          "&::-webkit-scrollbar": { width: "8px" },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "#888",
+            borderRadius: "4px",
+          },
         }}
       >
-        <TextField fullWidth label="วันที่" name="date" type="date" margin="normal" slotProps={{ inputLabel: { shrink: true } }} required />
-        <TextField fullWidth label="ชื่อ 🙋" name="name" margin="normal" required />
-        <TextField fullWidth label="ทะเบียนรถ 🚛" name="car_no" margin="normal" required />
-        <TextField fullWidth label="เบอร์โทร 📞" name="phone" margin="normal" type="number" required />
-        <TextField fullWidth label="เลขบาร์ 📦" name="barcode" margin="normal" required />
-        <TextField fullWidth label="เส้นทาง 📍" name="route" margin="normal" required />
-        <TextField fullWidth label="รอบเวลาสแตนบาย ⏰" name="standby_round"  margin="normal" required />
-        <TextField fullWidth label="เวลาสแตนบาย" name="standby_time" type="time" margin="normal" slotProps={{ inputLabel: { shrink: true } }} required />
-        <TextField fullWidth label="ออกเดินทาง" name="depart_time" type="time" margin="normal" slotProps={{ inputLabel: { shrink: true } }}  required />
-        <TextField fullWidth label="หมายเหตุ" name="remark" margin="normal" multiline rows={3} />
+        <LocalizationProvider
+          dateAdapter={AdapterDateFns}
+          adapterLocale={thLocale}
+        >
+          <Box sx={{ mt: 2, color: "black" }}>
+            <DatePicker
+              name="date"
+              label="เลือกวันที่"
+              value={date}
+              onChange={(newValue) => setSelectedDate(newValue)}
+              renderInput={(params) => <TextField fullWidth {...params} required />}
+            />
+          </Box>
+        </LocalizationProvider>
         <TextField
-          fullWidth label="ค่าเที่ยว (บาท)" name="trip_fee"
-          value={tripFee} onChange={handleTripFeeChange}
-          margin="normal" 
+          fullWidth
+          label="ชื่อ 🙋"
+          name="name"
+          margin="normal"
+          required
+        />
+        <TextField
+          fullWidth
+          label="ทะเบียนรถ 🚛"
+          name="car_no"
+          margin="normal"
+          required
+        />
+        <TextField
+          fullWidth
+          label="เบอร์โทร 📞"
+          name="phone"
+          margin="normal"
           type="number"
           required
         />
         <TextField
-          fullWidth label="เบิกน้ำมัน (บาท)" value={oilClaim}
+          fullWidth
+          label="เลขบาร์ 📦"
+          name="barcode"
           margin="normal"
-          slotProps={{ input: { readOnly: true},}}
+          required
         />
-        {/* <TextField fullWidth label="บัญชีธนาคาร 🏦" name="bank_name" margin="normal" required /> */}
+        <TextField
+          fullWidth
+          label="เส้นทาง 📍"
+          name="route"
+          margin="normal"
+          required
+        />
+        <TextField
+          fullWidth
+          label="รอบเวลาสแตนบาย ⏰"
+          name="standby_round"
+          margin="normal"
+          required
+        />
+        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={thLocale}>
+        <Box sx={{ mt: 1 }}>
+          <TimePicker 
+            label="เวลาสแตนบาย"
+            name="standby_time"
+            value={standbyTime}
+            onChange={(newValue) => setStandbyTime(newValue)}
+            renderInput={(params) => <TextField fullWidth margin="normal" required {...params} />}
+          />
+          </Box>
+          </LocalizationProvider>
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={thLocale}>
+          <Box sx={{ mt: 2 }}>
+          <TimePicker
+            label="ออกเดินทาง"
+            name="depart_time"
+            value={departTime}
+            onChange={(newValue) => setDepartTime(newValue)}
+            renderInput={(params) => <TextField fullWidth margin="normal" required {...params} />}
+          />
+          </Box>
+        </LocalizationProvider>
+        <TextField
+          fullWidth
+          label="หมายเหตุ"
+          name="remark"
+          margin="normal"
+          multiline
+          rows={3}
+        />
+        <TextField
+          fullWidth
+          label="ค่าเที่ยว (บาท)"
+          name="trip_fee"
+          value={tripFee}
+          onChange={handleTripFeeChange}
+          margin="normal"
+          type="number"
+          required
+        />
+        <TextField
+          fullWidth
+          label="เบิกน้ำมัน (บาท)"
+          value={oilClaim}
+          margin="normal"
+          slotProps={{ input: { readOnly: true } }}
+        />
         <FormControl fullWidth margin="normal" required>
           <InputLabel id="bank-label">บัญชีธนาคาร 🏦</InputLabel>
           <Select
@@ -152,8 +239,20 @@ export default function Home() {
             <MenuItem value="ยูโอบี">ยูโอบี</MenuItem>
           </Select>
         </FormControl>
-        <TextField fullWidth label="ชื่อบัญชี" name="account_name" margin="normal" required />
-        <TextField fullWidth label="เลขบัญชี" name="account_number" margin="normal" required />
+        <TextField
+          fullWidth
+          label="ชื่อบัญชี"
+          name="account_name"
+          margin="normal"
+          required
+        />
+        <TextField
+          fullWidth
+          label="เลขบัญชี"
+          name="account_number"
+          margin="normal"
+          required
+        />
         <Button variant="contained" type="submit" fullWidth sx={{ mt: 2 }}>
           ส่งข้อมูล
         </Button>
