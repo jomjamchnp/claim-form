@@ -49,13 +49,14 @@ export default function Home() {
       setSuccessDialogOpen(true);
       setTripFee('');
       setOilClaim('');
+      setSelectedDate(new Date());
+      setStandbyTime(null)
+      setDepartTime(null)
+      setBank('')
       e.target.reset();
     } else {
       // handle error
       alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
-      setSelectedDate(null);
-      setStandbyTime(null)
-      setDepartTime(null)
     }
   };
 
