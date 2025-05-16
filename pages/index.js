@@ -20,7 +20,7 @@ import {
 export default function Home() {
   const [tripFee, setTripFee] = useState("");
   const [oilClaim, setOilClaim] = useState("");
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openDialog, setOpenDialog] = useState(true);
   const [inputPassword, setInputPassword] = useState("");
   const [bank, setBank] = useState("");
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
