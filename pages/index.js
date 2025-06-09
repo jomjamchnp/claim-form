@@ -252,7 +252,10 @@ export default function Home() {
             <MenuItem value="กสิกรไทย">กสิกรไทย</MenuItem>
             <MenuItem value="ไทยพาณิชย์">ไทยพาณิชย์</MenuItem>
             <MenuItem value="กรุงเทพ">กรุงเทพ</MenuItem>
+            <MenuItem value="กรุงศรี">กรุงศรี</MenuItem>
+            <MenuItem value="อาคารสงเคราะห์">อาคารสงเคราะห์</MenuItem>
             <MenuItem value="ทหารไทยธนชาต (TTB)">ทหารไทยธนชาต (TTB)</MenuItem>
+            <MenuItem value="ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร(ธ.ก.ส.)">ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร(ธ.ก.ส.)</MenuItem>
             <MenuItem value="ออมสิน">ออมสิน</MenuItem>
             <MenuItem value="เกียรตินาคิน">เกียรตินาคิน</MenuItem>
             <MenuItem value="ซีไอเอ็มบี">ซีไอเอ็มบี</MenuItem>
