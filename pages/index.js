@@ -36,10 +36,11 @@ export default function Home() {
 
 
   const handleTripFeeChange = (e) => {
-    const fee = parseFloat(e.target.value) || 0;
+    let value = e.target.value;
+    value = value.replace(/[^0-9]/g, '');
+    setTripFee(value);
+    const fee = parseFloat(value) || 0;
     setOilClaim((fee * 0.5).toFixed(2));
-    const newFee = fee.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setTripFee(newFee);
   };
 
   const handleSubmit = async (e) => {
@@ -47,9 +48,11 @@ export default function Home() {
     setIsSubmitting(true);
     const data = new FormData(e.target);
     const obj = Object.fromEntries(data.entries());
-    obj.oil_claim = oilClaim;
+    const formattedOil = parseFloat(oilClaim || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    obj.oil_claim = formattedOil;
     obj.account_number = accountNumber
-    // console.log(JSON.stringify(obj))
+    // console.log( JSON.stringify(obj))
     const res = await fetch("/api/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -58,6 +61,7 @@ export default function Home() {
 
     if (res.ok) {
       setSuccessDialogOpen(true);
+      setAccountNumber("")
       setTripFee("");
       setOilClaim("");
       setSelectedDate(new Date());
@@ -234,7 +238,7 @@ export default function Home() {
           fullWidth
           label="ค่าเที่ยว (บาท)"
           name="trip_fee"
-          value={tripFee}
+          value={tripFee ? parseInt(tripFee).toLocaleString() : ''}
           onChange={handleTripFeeChange}
           margin="normal"
           // type="number"
@@ -243,7 +247,11 @@ export default function Home() {
         <TextField
           fullWidth
           label="เบิกน้ำมัน (บาท)"
-          value={oilClaim}
+          value={
+            oilClaim
+              ? parseFloat(oilClaim).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              : ''
+          }
           margin="normal"
           slotProps={{ input: { readOnly: true } }}
         />
