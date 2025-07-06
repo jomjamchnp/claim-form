@@ -32,11 +32,14 @@ export default function Home() {
   const [standbyTime, setStandbyTime] = useState(null);
   const [departTime, setDepartTime] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [accountNumber, setAccountNumber] = useState('');
+
 
   const handleTripFeeChange = (e) => {
     const fee = parseFloat(e.target.value) || 0;
-    setTripFee(e.target.value);
     setOilClaim((fee * 0.5).toFixed(2));
+    const newFee = fee.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    setTripFee(newFee);
   };
 
   const handleSubmit = async (e) => {
@@ -45,6 +48,8 @@ export default function Home() {
     const data = new FormData(e.target);
     const obj = Object.fromEntries(data.entries());
     obj.oil_claim = oilClaim;
+    obj.account_number = accountNumber
+    // console.log(JSON.stringify(obj))
     const res = await fetch("/api/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -66,7 +71,10 @@ export default function Home() {
     }
     setIsSubmitting(false); // หยุดโหลด
   };
-
+  const handleAccountNumberChange = (e) => {
+    const value = e.target.value.replace(/[^0-9]/g, ''); // เอาเฉพาะตัวเลข
+    setAccountNumber(value);
+  };
   const handlePasswordCheck = async () => {
     const res = await fetch("/api/verify-password", {
       method: "POST",
@@ -229,7 +237,7 @@ export default function Home() {
           value={tripFee}
           onChange={handleTripFeeChange}
           margin="normal"
-          type="number"
+          // type="number"
           required
         />
         <TextField
@@ -275,6 +283,13 @@ export default function Home() {
           name="account_number"
           margin="normal"
           required
+          value={accountNumber}
+          onChange={handleAccountNumberChange}
+          slotProps={{
+            input: {
+              inputMode: 'numeric'
+            }
+          }}
         />
         <Button
           variant="contained"
