@@ -5,7 +5,6 @@ export default async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
   const data = req.body;
-
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
   const sheets = google.sheets({ version: 'v4', auth: new google.auth.JWT(
     credentials.client_email, null, credentials.private_key, ['https://www.googleapis.com/auth/spreadsheets']
@@ -53,7 +52,7 @@ export default async (req, res) => {
 เวลาสแตนบาย: ${data.standby_time}
 ออกเดินทาง: ${data.depart_time}
 หมายเหตุ: ${data.remark}
-💸 ค่าเที่ยว: ${data.trip_fee} บาท
+💸 ค่าเที่ยว: ${data.trip_fee}.00 บาท
 💸 เบิกน้ำมัน: ${data.oil_claim} บาท
 🏦 บัญชี: ${data.bank}
 👤 ชื่อบัญชี: ${data.account_name}
