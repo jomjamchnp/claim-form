@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     const password = obj.password;
     const currentDate = new Date();
     const formattedDate = currentDate.toLocaleDateString('en-GB');
-    const message = `รหัสประจำวันนี้ ${formattedDate} : ${password}`;
+    const message = `รหัสประจำวันที่ ${formattedDate} : ${password}`;
     
     // save daily password in gg sheet
     const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
