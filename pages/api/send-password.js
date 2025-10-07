@@ -7,7 +7,9 @@ export default async function handler(req, res) {
     const obj = JSON.parse(jsonString);
     const password = obj.password;
     const currentDate = new Date();
-    const formattedDate = currentDate.toLocaleDateString('en-GB');
+    const formattedDate = currentDate.toLocaleDateString('en-GB', {
+      timeZone: 'Asia/Bangkok'
+    });
     const message = `รหัสประจำวันที่ ${formattedDate} : ${password}`;
     
     // save daily password in gg sheet
