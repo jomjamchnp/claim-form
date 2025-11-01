@@ -4,43 +4,54 @@ import fetch from 'node-fetch';
 export default async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-  const data = req.body;
-  const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-  const sheets = google.sheets({ version: 'v4', auth: new google.auth.JWT(
-    credentials.client_email, null, credentials.private_key, ['https://www.googleapis.com/auth/spreadsheets']
-  )});
+  try {
+    const data = req.body;
+    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+    const sheets = google.sheets({
+      version: 'v4',
+      auth: new google.auth.JWT(
+        credentials.client_email,
+        null,
+        credentials.private_key,
+        ['https://www.googleapis.com/auth/spreadsheets']
+      )
+    });
 
-  const sheetId = process.env.SHEET_ID;
-  const range = 'ฟอร์ม!A2:Z';
+    const sheetId = process.env.SHEET_ID;
+    const range = 'ฟอร์ม!A2:Z';
 
-  await sheets.spreadsheets.values.append({
-    spreadsheetId: sheetId,
-    range,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: { values: [[
-      new Date().toLocaleString('en-GB', { timeZone: 'UTC' }),
-      data.date,
-      data.name,
-      data.car_no,
-      data.phone,
-      data.barcode,
-      data.route,
-      data.standby_round,
-      data.standby_time,
-      data.depart_time,
-      data.remark,
-      data.trip_fee,
-      data.oil_claim,
-      data.bank,
-      data.account_name,
-      data.account_number
-    ]] }
-  });
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: sheetId,
+      range,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [
+          [
+            new Date().toLocaleString('en-GB', { timeZone: 'UTC' }),
+            data.date,
+            data.name,
+            data.car_no,
+            data.phone,
+            data.barcode,
+            data.route,
+            data.standby_round,
+            data.standby_time,
+            data.depart_time,
+            data.remark,
+            data.trip_fee,
+            data.oil_claim,
+            data.bank,
+            data.account_name,
+            data.account_number,
+          ],
+        ],
+      },
+    });
 
-  const token = process.env.LINE_TOKEN;
-  const groupId = process.env.LINE_GROUP_ID;
+    const token = process.env.LINE_TOKEN;
+    const groupId = process.env.LINE_GROUP_ID;
 
-  const message = `
+    const message = `
 🚛 แจ้งเบิกน้ำมัน 🚛
 วันที่: ${data.date}
 ชื่อ🙋: ${data.name}
@@ -59,14 +70,26 @@ export default async (req, res) => {
 🔢 เลขบัญชี: ${data.account_number}
 `;
 
-  await fetch('https://api.line.me/v2/bot/message/push', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ to: groupId, messages: [{ type: 'text', text: message }] })
-  });
+    const lineRes = await fetch('https://api.line.me/v2/bot/message/push', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        to: groupId,
+        messages: [{ type: 'text', text: message }],
+      }),
+    });
 
-  res.status(200).send('ส่งข้อมูลเรียบร้อยแล้ว!');
+    if (!lineRes.ok) {
+      const errorText = await lineRes.text();
+      return res.status(lineRes.status).send({
+        error: `LINE API failed: ${lineRes.status} - ${errorText}`,
+      });
+    }
+    res.status(200).send('ส่งข้อมูลเรียบร้อยแล้ว!');
+  } catch (err) {
+    res.status(500).send({ error: err.message });
+  }
 };
