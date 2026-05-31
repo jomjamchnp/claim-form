@@ -9,6 +9,7 @@ export default async function handler(req, res) {
 
   try {
     const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+    credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
     const sheets = google.sheets({ version: 'v4', auth: new google.auth.JWT(
       credentials.client_email, null, credentials.private_key, ['https://www.googleapis.com/auth/spreadsheets']
     )});
