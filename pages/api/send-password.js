@@ -1,5 +1,7 @@
 import { google } from 'googleapis';
 
+// NOTE: We setting cron job in cron-job.org
+// Every day at 00:00 (Bangkok time) to run this API and send password to line group and save in google sheet
 export default async function handler(req, res) {
     const genratrApiUrl = "https://api.genratr.com/?length=6&lowercase&numbers";
     const genResponse = await fetch(genratrApiUrl);
