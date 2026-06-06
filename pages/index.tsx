@@ -52,7 +52,8 @@ interface ScanResult {
   phone: string;
   barcode: string;
   route: string;
-  standby_time: string;
+  vehicle_type: string;
+  standby_round: string;
 }
 
 const EXPECTED_SUPPLIER: Record<string, string> = {
@@ -71,6 +72,7 @@ const formSchema = z.object({
   phone: z.string().min(1, "กรุณากรอกเบอร์โทร"),
   barcode: z.string().min(1, "กรุณากรอกเลขบาร์"),
   route: z.string().min(1, "กรุณากรอกเส้นทาง"),
+  vehicle_type: z.string().min(1, "กรุณากรอกประเภทรถ"),
   standby_round: z.string().min(1, "กรุณากรอกรอบเวลา"),
   standby_time: z.string().min(1, "กรุณาเลือกเวลาสแตนบาย"),
   depart_time: z.string().min(1, "กรุณาเลือกเวลาออกเดินทาง"),
@@ -146,6 +148,9 @@ export default function V2() {
   const [scanImage, setScanImage] = useState<string | null>(null);
   const [scanDraft, setScanDraft] = useState<ScanResult | null>(null);
   const [autofilled, setAutofilled] = useState<AutofilledKeys>(new Set());
+  const [confirmedScanImage, setConfirmedScanImage] = useState<string | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [supplierName, setSupplierName] = useState("");
   const [supplierMismatch, setSupplierMismatch] = useState<{
@@ -165,6 +170,7 @@ export default function V2() {
       phone: "",
       barcode: "",
       route: "",
+      vehicle_type: "",
       standby_round: "",
       standby_time: "",
       depart_time: "",
@@ -294,7 +300,9 @@ export default function V2() {
         newAutofilled.add("date");
       }
     }
-    (["name", "car_no", "phone", "barcode", "route"] as const).forEach((k) => {
+    (
+      ["name", "car_no", "phone", "barcode", "route", "vehicle_type"] as const
+    ).forEach((k) => {
       const v = scanDraft[k as keyof ScanResult];
       if (v) {
         form.setValue(k, v);
@@ -302,9 +310,9 @@ export default function V2() {
       }
     });
 
-    if (scanDraft.standby_time) {
-      // supports "DD/MM/YYYY HH:MM" or legacy "HH:MM"
-      const parts = scanDraft.standby_time.trim().split(" ");
+    if (scanDraft.standby_round) {
+      // supports "DD/MM/YYYY HH:MM" or "HH:MM"
+      const parts = scanDraft.standby_round.trim().split(" ");
       if (parts.length === 2) {
         const [datePart, timePart] = parts;
         const [d, m, y] = datePart.split("/").map(Number);
@@ -313,13 +321,14 @@ export default function V2() {
           form.setValue("date", parsed);
           newAutofilled.add("date");
         }
-        form.setValue("standby_time", timePart);
+        form.setValue("standby_round", timePart);
       } else {
-        form.setValue("standby_time", scanDraft.standby_time);
+        form.setValue("standby_round", scanDraft.standby_round);
       }
-      newAutofilled.add("standby_time");
+      newAutofilled.add("standby_round");
     }
 
+    setConfirmedScanImage(scanImage);
     setSupplierName(scanDraft.supplier_name ?? "");
     setAutofilled(newAutofilled);
     setScanPhase("idle");
@@ -347,30 +356,34 @@ export default function V2() {
       maximumFractionDigits: 2,
     });
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       ...values,
       date: format(values.date, "dd/MM/yyyy"),
       trip_fee: tripFeeNum.toLocaleString(),
       oil_claim: oilClaimFormatted,
     };
-    console.log("🚀 ~ onSubmit ~ payload:", payload);
+    if (confirmedScanImage) {
+      payload.image = confirmedScanImage.split(",")[1];
+    }
 
-    // try {
-    //   const res = await fetch("/api/submit", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify(payload),
-    //   });
-    //   if (res.ok) {
-    //     toast.success("ส่งฟอร์มแจ้งเบิกน้ำมันแล้ว ✓");
-    //     form.reset({ date: new Date() });
-    //     setAutofilled(new Set());
-    //   } else {
-    //     toast.error("เกิดข้อผิดพลาดในการส่งข้อมูล");
-    //   }
-    // } catch {
-    //   toast.error("เกิดข้อผิดพลาดในการส่งข้อมูล");
-    // }
+    try {
+      const res = await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        toast.success("ส่งฟอร์มแจ้งเบิกน้ำมันแล้ว ✓");
+        form.reset({ date: new Date() });
+        setAutofilled(new Set());
+        setConfirmedScanImage(null);
+        setSupplierName("");
+      } else {
+        toast.error("เกิดข้อผิดพลาดในการส่งข้อมูล");
+      }
+    } catch {
+      toast.error("เกิดข้อผิดพลาดในการส่งข้อมูล");
+    }
     setIsSubmitting(false);
   };
 
@@ -378,7 +391,6 @@ export default function V2() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Password dialog */}
       <Dialog open={!isUnlocked}>
         <DialogContent
           className="sm:max-w-sm"
@@ -406,7 +418,6 @@ export default function V2() {
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Supplier mismatch warning */}
       <Dialog
         open={!!supplierMismatch}
@@ -448,7 +459,6 @@ export default function V2() {
           )}
         </DialogContent>
       </Dialog>
-
       {/* Scan review sheet */}
       {scanPhase === "review" && scanDraft && (
         <div className="fixed inset-0 z-40 flex flex-col justify-end">
@@ -526,7 +536,8 @@ export default function V2() {
                       phone: "📞 เบอร์โทร",
                       barcode: "📦 เลขบาร์",
                       route: "📍 เส้นทาง",
-                      standby_time: "⏰ เวลาสแตนบาย",
+                      vehicle_type: "🚚 ประเภทรถ",
+                      standby_round: "⏰ รอบเวลาสแตนบาย",
                     };
                     const isLocked = k === "supplier_name";
                     const empty = !v;
@@ -609,7 +620,6 @@ export default function V2() {
           </div>
         </div>
       )}
-
       {/* Scanning overlay */}
       {scanPhase === "scanning" && (
         <div className="fixed inset-0 z-40 bg-black/90 flex flex-col items-center justify-center px-7">
@@ -633,7 +643,6 @@ export default function V2() {
           <p className="text-white/50 text-xs mt-2">กรุณารอสักครู่</p>
         </div>
       )}
-
       {/* Main form */}
       <div className="max-w-lg mx-auto px-5 py-8 pb-16">
         {/* Header */}
@@ -886,6 +895,37 @@ export default function V2() {
                       className={cn(
                         "h-12",
                         autofilled.has("route") &&
+                          "border-brand-teal bg-brand-sky border-2",
+                      )}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Vehicle type */}
+            <FormField
+              control={form.control}
+              name="vehicle_type"
+              render={({ field }) => (
+                <FormItem className="mb-5">
+                  <div className="flex items-center justify-between">
+                    <FormLabel className="text-brand-sub text-sm">
+                      ประเภทรถ 🚚 <span className="text-red-500">*</span>
+                    </FormLabel>
+                    {autofilled.has("vehicle_type") && <AutofilledBadge />}
+                  </div>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("vehicle_type");
+                      }}
+                      className={cn(
+                        "h-12",
+                        autofilled.has("vehicle_type") &&
                           "border-brand-teal bg-brand-sky border-2",
                       )}
                     />

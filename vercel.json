@@ -2,5 +2,8 @@
     "routes": [
       { "src": "/api/(.*)", "dest": "/api/$1.js" },
       { "src": "/(.*)", "dest": "/index.js" }
+    ],
+    "crons": [
+      { "path": "/api/send-password-v2", "schedule": "0 17 * * *" }
     ]
   }

@@ -45,10 +45,10 @@ For SPX (Linehaul Trip Runsheet):
   · "เลขทริป :" → trip number (e.g. "LT0Q5725QQK92") → barcode field
   · "เวลา Seal รถ :" → ignore
   · "STA:" → arrival, ignore
-  · "STD:" → standby datetime, format "YYYY/MM/DD HH:MM:SS" → standby_time
+  · "STD:" → standby datetime, format "YYYY/MM/DD HH:MM:SS" → standby_round
   · "Operator:" → ignore
   · "ชื่อ Agency:" → supplier_name (e.g. "LH-IFN")
-  · "ประเภทรถ:" → ignore
+  · "ประเภทรถ:" → vehicle_type (the row right below "ชื่อ Agency:"). Take ONLY the part before any dash — e.g. "Semi trailer-รถห้องแม่ลูก" → "Semi trailer"
   · "ทะเบียนรถ:" → car_no (keep dash, e.g. "68-3943")
   · "LH trip route :" → route, formatted "<A> > <B>" (e.g. "SOCN > SORC-B")
 - date is derived from the STD date portion.
@@ -64,11 +64,11 @@ For Flash Express (Proof of Van Dispatching):
   · "พนักงานขับรถ 2" → ignore
   · "ชื่อบริษัท" → supplier_name (e.g. "IFNM")
   · "ต้นทาง" → IGNORE (this is a short station code, NOT the route)
-  · "ชื่อเส้นทาง" → route (a long dash-separated string like "DD1-6W7.2-NE2-NO2-NO4-20260507 840") — THIS is the route field, not "ต้นทาง"
+  · "ชื่อเส้นทาง" → route (a long dash-separated string like "DD1-6W7.2-NE2-NO2-NO4-20260507 840") — THIS is the route field, not "ต้นทาง". The SECOND dash-separated segment of this string is the vehicle type → vehicle_type (e.g. from "DD1-6W7.2-NE2-NO2-NO4-20260507" extract "6W7.2")
   · "ผู้ดำเนินงาน" → ignore
   · "Print time" → ignore
 - MIDDLE TABLE columns (left to right, 1-indexed): col1=ลำดับ | col2=ชื่อสาขา | col3=วันที่ | col4=เวลาคาดว่าจะถึง | col5=เวลาที่ถึงจริง | col6=เวลาคาดว่าจะออกเดินทาง | col7=เวลาที่ออกเดินทางจริง | col8=ระยะเวลา | col9=ระยะทาง | col10=เลขซีลล็อครถ | col11=สาขาเซ็นรับรอง
-  · From the FIRST DATA ROW (the row right below the header row) take col3 "วันที่" as the date and col4 "เวลาคาดว่าจะถึง" (expected arrival time, printed/typed) as the standby time. Combine into standby_time as "DD/MM/YYYY HH:MM". Example: row 1 has date "2026-05-07" and col4 "10:00" → standby_time = "07/05/2026 10:00".
+  · From the FIRST DATA ROW (the row right below the header row) take col3 "วันที่" as the date and col4 "เวลาคาดว่าจะถึง" (expected arrival time, printed/typed) as the standby time. Combine into standby_round as "DD/MM/YYYY HH:MM". Example: row 1 has date "2026-05-07" and col4 "10:00" → standby_round = "07/05/2026 10:00".
 
 Return ONLY this JSON object, no markdown, no explanation:
 {
@@ -80,7 +80,8 @@ Return ONLY this JSON object, no markdown, no explanation:
   "phone": "digits only (Flash only; empty for SPX)",
   "barcode": "see carrier rules above",
   "route": "see carrier rules above (Flash: ชื่อเส้นทาง, NOT ต้นทาง)",
-  "standby_time": "DD/MM/YYYY HH:MM in 24h format"
+  "vehicle_type": "SPX: ประเภทรถ value | Flash: 2nd dash-segment of ชื่อเส้นทาง (e.g. 6W7.2)",
+  "standby_round": "DD/MM/YYYY HH:MM in 24h format"
 }
 If any field is not found, return "" for that field. Return JSON only.`;
 
@@ -93,7 +94,8 @@ type ScanResult = {
   phone: string;
   barcode: string;
   route: string;
-  standby_time: string;
+  vehicle_type: string;
+  standby_round: string;
 };
 
 const SCAN_KEYS: (keyof ScanResult)[] = [
@@ -105,7 +107,8 @@ const SCAN_KEYS: (keyof ScanResult)[] = [
   "phone",
   "barcode",
   "route",
-  "standby_time",
+  "vehicle_type",
+  "standby_round",
 ];
 
 export default async function handler(
@@ -152,7 +155,21 @@ export default async function handler(
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
       model: SCAN_MODEL,
-      max_tokens: 512,
+      max_tokens: 1024,
+      tools: [
+        {
+          name: "extract_fields",
+          description: "Return the extracted runsheet fields.",
+          input_schema: {
+            type: "object",
+            properties: Object.fromEntries(
+              SCAN_KEYS.map((k) => [k, { type: "string" }]),
+            ),
+            required: SCAN_KEYS as string[],
+          },
+        },
+      ],
+      tool_choice: { type: "tool", name: "extract_fields" },
       messages: [
         {
           role: "user",
@@ -167,21 +184,21 @@ export default async function handler(
       ],
     });
 
-    const text =
-      response.content[0].type === "text" ? response.content[0].text : "";
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) {
+    const toolUse = response.content.find((b) => b.type === "tool_use");
+    if (!toolUse || toolUse.type !== "tool_use") {
+      console.error("[scan] no tool_use in response", response.stop_reason);
       return res.status(422).json({ error: "อ่านรูปไม่สำเร็จ" });
     }
 
-    const parsed = JSON.parse(match[0]);
+    const parsed = toolUse.input as Record<string, unknown>;
     const result: ScanResult = {} as ScanResult;
     SCAN_KEYS.forEach((k) => {
       result[k] = parsed[k] != null ? String(parsed[k]) : "";
     });
 
     return res.status(200).json(result);
-  } catch {
+  } catch (err) {
+    console.error("[scan] failed:", err);
     return res.status(500).json({ error: "อ่านรูปไม่สำเร็จ ลองใหม่อีกครั้ง" });
   }
 }
