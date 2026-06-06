@@ -60,7 +60,7 @@ For Flash Express (Proof of Van Dispatching):
   · barcode → the alphanumeric code printed under the barcode image (NOT the digits in "Car no")
   · date → from the "Date" field, convert to DD/MM/YYYY
 - TOP-MIDDLE labeled rows (label on left, value on right):
-  · "พนักงานขับรถ 1" → value like "สมชาย ใจดี(0891234567)". Extract ONLY the Thai personal name before the parentheses → name (e.g. "สมชาย ใจดี"). The digits inside parentheses → phone. CRITICAL: name must contain ONLY the person's first and last name — do NOT include any prefix like "ชื่อ" and do NOT include any text from other rows/labels (e.g. "ทะเบียนรถ", "เบอร์โทร", "เส้นทาง").
+  · "พนักงานขับรถ 1" → "<name>(<phone>)" → split: name without parens → name; the digits inside parens → phone
   · "พนักงานขับรถ 2" → ignore
   · "ชื่อบริษัท" → supplier_name. Take ONLY the short code BEFORE any parentheses — e.g. "IFNM (INFINITE MOVING)" → "IFNM"
   · "ต้นทาง" → IGNORE (this is a short station code, NOT the route)
