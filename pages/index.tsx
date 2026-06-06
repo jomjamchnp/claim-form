@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import jsQR from "jsqr";
 import {
   ScanIcon,
   SparklesIcon,
@@ -117,58 +116,28 @@ function resizeImage(file: File, maxDim = 1280): Promise<string> {
 function normalizeQr(raw: string | undefined | null): string | null {
   const v = raw?.trim();
   if (!v) return null;
-  if (/^https?:\/\//i.test(v)) return v.split("/").filter(Boolean).pop() ?? null;
+  if (/^https?:\/\//i.test(v))
+    return v.split("/").filter(Boolean).pop() ?? null;
   return v;
 }
 
-// jsQR fallback — runs on the full-res canvas (enough pixels per module).
-function decodeQrWithJsQR(file: File): Promise<string | null> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const c = document.createElement("canvas");
-        c.width = img.width;
-        c.height = img.height;
-        const ctx = c.getContext("2d");
-        if (!ctx) return resolve(null);
-        ctx.drawImage(img, 0, 0);
-        const { data, width, height } = ctx.getImageData(
-          0,
-          0,
-          img.width,
-          img.height,
-        );
-        resolve(normalizeQr(jsQR(data, width, height)?.data));
-      };
-      img.onerror = () => resolve(null);
-      img.src = reader.result as string;
-    };
-    reader.onerror = () => resolve(null);
-    reader.readAsDataURL(file);
-  });
-}
-
-// Decode the barcode from the QR code at FULL resolution (before resize).
-// Prefer the native BarcodeDetector (robust, esp. on Android Chrome); fall back
-// to jsQR where it isn't available (e.g. iOS Safari). null if not found.
+// Decode the barcode from the QR code using zxing-wasm (zxing-cpp port) — the
+// strongest JS decoder, and used on every device so results are identical across
+// desktop Chrome, iOS Safari and the LINE in-app WebView. Dynamically imported so
+// it never runs during SSR. null if not found.
 async function decodeQrFromFile(file: File): Promise<string | null> {
-  const Detector = (
-    globalThis as unknown as { BarcodeDetector?: new (opts?: unknown) => { detect: (src: ImageBitmapSource) => Promise<{ rawValue: string }[]> } }
-  ).BarcodeDetector;
-  if (Detector) {
-    try {
-      const detector = new Detector({ formats: ["qr_code"] });
-      const bitmap = await createImageBitmap(file);
-      const codes = await detector.detect(bitmap);
-      const value = normalizeQr(codes[0]?.rawValue);
-      if (value) return value;
-    } catch {
-      // fall through to jsQR
-    }
+  try {
+    const { readBarcodes } = await import("zxing-wasm/reader");
+    const results = await readBarcodes(file, {
+      tryHarder: true,
+      tryDownscale: true,
+      formats: ["QRCode"],
+      maxNumberOfSymbols: 1,
+    });
+    return normalizeQr(results[0]?.text);
+  } catch {
+    return null;
   }
-  return decodeQrWithJsQR(file);
 }
 
 // ─── Autofilled Field wrapper ────────────────────────────────────────────────
