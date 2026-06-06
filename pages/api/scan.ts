@@ -39,7 +39,7 @@ Step 1 — Identify the carrier by logo and title:
 Step 2 — Extract fields by their visual region.
 
 For SPX (Linehaul Trip Runsheet):
-- TOP-LEFT region (above the main info block): a small barcode image with "ID:<number>" printed below it — IGNORE this ID number, it is NOT the barcode field. The "ชื่อคนขับ" row (right above the dashed line) contains a long string like "LH LH-IFN 683943 Semi trailer พงศธร สุขเดช - SUB". Extract ONLY the Thai personal name (e.g. "พงศธร สุขเดช") → name field — strip out the agency code prefix ("LH LH-IFN <digits> Semi trailer" or similar) and any trailing suffix after a dash (e.g. "- SUB", "- MAIN"). The driver name is always the Thai-script portion between those wrappers.
+- TOP-LEFT region (above the main info block): a small barcode image with "ID:<number>" printed below it — IGNORE this ID number, it is NOT the barcode field. The "ชื่อคนขับ" row (right above the dashed line) contains a long string like "LH LH-IFN 683943 Semi trailer สมศรี มีสุข - SUB". Extract ONLY the Thai personal name (e.g. "สมศรี มีสุข") → name field — strip out the agency code prefix ("LH LH-IFN <digits> Semi trailer" or similar) and any trailing suffix after a dash (e.g. "- SUB", "- MAIN"). The driver name is always the Thai-script portion between those wrappers.
 - LEFT INFO BLOCK (under the dashed line) has labeled rows:
   · "ชื่อทริป :" → trip code, ignore
   · "เลขทริป :" → trip number (e.g. "LT0Q5725QQK92") → barcode field
@@ -60,9 +60,9 @@ For Flash Express (Proof of Van Dispatching):
   · barcode → the alphanumeric code printed under the barcode image (NOT the digits in "Car no")
   · date → from the "Date" field, convert to DD/MM/YYYY
 - TOP-MIDDLE labeled rows (label on left, value on right):
-  · "พนักงานขับรถ 1" → "<name> (<phone>)" → split: name without parens → name; the digits inside parens → phone
+  · "พนักงานขับรถ 1" → value like "สมชาย ใจดี(0891234567)". Extract ONLY the Thai personal name before the parentheses → name (e.g. "สมชาย ใจดี"). The digits inside parentheses → phone. CRITICAL: name must contain ONLY the person's first and last name — do NOT include any prefix like "ชื่อ" and do NOT include any text from other rows/labels (e.g. "ทะเบียนรถ", "เบอร์โทร", "เส้นทาง").
   · "พนักงานขับรถ 2" → ignore
-  · "ชื่อบริษัท" → supplier_name (e.g. "IFNM")
+  · "ชื่อบริษัท" → supplier_name. Take ONLY the short code BEFORE any parentheses — e.g. "IFNM (INFINITE MOVING)" → "IFNM"
   · "ต้นทาง" → IGNORE (this is a short station code, NOT the route)
   · "ชื่อเส้นทาง" → route (a long dash-separated string like "DD1-6W7.2-NE2-NO2-NO4-20260507 840") — THIS is the route field, not "ต้นทาง". The SECOND dash-separated segment of this string is the vehicle type → vehicle_type (e.g. from "DD1-6W7.2-NE2-NO2-NO4-20260507" extract "6W7.2")
   · "ผู้ดำเนินงาน" → ignore
