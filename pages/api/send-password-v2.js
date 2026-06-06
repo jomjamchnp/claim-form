@@ -14,9 +14,16 @@ export default async function handler(req, res) {
     
     // save daily password in gg sheet
     const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-    const sheets = google.sheets({ version: 'v4', auth: new google.auth.JWT(
-      credentials.client_email, null, credentials.private_key, ['https://www.googleapis.com/auth/spreadsheets']
-    )});
+    credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: credentials.client_email,
+        private_key: credentials.private_key,
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      projectId: credentials.project_id,
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
     const sheetId = process.env.SHEET_ID;
     const range = 'Password!A1';
 
