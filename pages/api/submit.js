@@ -182,13 +182,7 @@ export default async (req, res) => {
 
     const lineMessages = [{ type: "text", text: message }];
     if (driveFileId) {
-      // const proxyUrl = `https://${req.headers.host}/api/img/${driveFileId}`;
-      console.log(
-        "🚀 ~ proxyUrl:",
-        `https://${req.headers.host}/api/img/${driveFileId}`,
-      );
-
-      const proxyUrl = `https://fda7-184-22-252-236.ngrok-free.app/api/img/${driveFileId}`;
+      const proxyUrl = `https://${req.headers.host}/api/img/${driveFileId}`;
       lineMessages.push({
         type: "image",
         originalContentUrl: proxyUrl,
