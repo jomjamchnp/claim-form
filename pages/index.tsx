@@ -56,10 +56,6 @@ interface ScanResult {
   standby_round: string;
 }
 
-const EXPECTED_SUPPLIER: Record<string, string> = {
-  spx: "LH-IFN",
-  flash: "IFNM",
-};
 
 type AutofilledKeys = Set<keyof FormValues>;
 
@@ -302,19 +298,6 @@ export default function V2() {
       }
 
       const result: ScanResult = await res.json();
-
-      // Supplier validation — block if found but wrong company
-      if (result.carrier && result.supplier_name) {
-        const expected = EXPECTED_SUPPLIER[result.carrier];
-        if (expected && result.supplier_name !== expected) {
-          const label = result.carrier === "spx" ? "ชื่อ Agency" : "ชื่อบริษัท";
-          setScanPhase("idle");
-          setScanImage(null);
-          setSupplierMismatch({ found: result.supplier_name, expected, label });
-          return;
-        }
-      }
-
       setScanDraft(result);
       setScanPhase("review");
     } catch {
