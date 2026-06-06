@@ -396,6 +396,7 @@ export default function V2() {
       date: format(values.date, "dd/MM/yyyy"),
       trip_fee: tripFeeNum.toLocaleString(),
       oil_claim: oilClaimFormatted,
+      supplier_name: supplierName,
     };
     if (confirmedScanImage) {
       payload.image = confirmedScanImage.split(",")[1];

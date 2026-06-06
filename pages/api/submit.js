@@ -166,6 +166,7 @@ export default async (req, res) => {
 ชื่อ🙋: ${data.name}
 ทะเบียนรถ🚛: ${data.car_no}
 เบอร์โทร: ${data.phone}
+ผู้ให้บริการ: ${data.supplier_name}
 เลขบาร์: ${data.barcode}
 ประเภทรถ🚚: ${data.vehicle_type}
 เส้นทาง: ${data.route}
