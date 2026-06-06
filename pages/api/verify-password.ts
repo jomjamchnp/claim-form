@@ -46,7 +46,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const realPassword = response.data.values?.[0]?.[0] ?? null;
-    console.log("🚀 ~ handler ~ realPassword:", realPassword)
     if (!realPassword) {
       return res.status(404).json({ error: "No password found" });
     }

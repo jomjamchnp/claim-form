@@ -1,30 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import Anthropic from "@anthropic-ai/sdk";
-import jsQR from "jsqr";
-import jpeg from "jpeg-js";
 import { isValidScanToken } from "./verify-password";
-
-// Decode the barcode value from the QR code in the runsheet image.
-// SPX QR encodes the trip number directly; Flash QR encodes a URL like
-// "https://api.flashexpress.com/gw/nws/web/proof/go/KKC1PR6U72" → take last segment.
-function decodeQrBarcode(imageBuffer: Buffer): string | null {
-  try {
-    const { data, width, height } = jpeg.decode(imageBuffer, {
-      useTArray: true,
-      maxMemoryUsageInMB: 512,
-    });
-    const qr = jsQR(new Uint8ClampedArray(data), width, height);
-    const raw = qr?.data.trim();
-    if (!raw) return null;
-    if (/^https?:\/\//i.test(raw)) {
-      return raw.split("/").filter(Boolean).pop() ?? null;
-    }
-    return raw;
-  } catch (e) {
-    console.error("[scan] QR decode failed:", e);
-    return null;
-  }
-}
 
 // const SCAN_MODEL = "claude-haiku-4-5-20251001"; // cheaper, less accurate
 const SCAN_MODEL = "claude-sonnet-4-6";
@@ -161,7 +137,10 @@ export default async function handler(
       .json({ error: `สแกนเกินจำนวน รอ ${retryMins} นาที`, retryAfterMs });
   }
 
-  const { image } = req.body as { image?: string }; // base64 jpeg
+  const { image, barcode: qrBarcode } = req.body as {
+    image?: string; // base64 jpeg
+    barcode?: string; // QR value decoded client-side (full-res)
+  };
   if (!image) {
     return res.status(400).json({ error: "ไม่พบรูปภาพ" });
   }
@@ -220,9 +199,8 @@ export default async function handler(
       result[k] = parsed[k] != null ? String(parsed[k]) : "";
     });
 
-    // Prefer the QR code (decoded server-side) for the barcode; fall back to the
-    // model's reading (เลขทริป / printed code) when the QR can't be detected.
-    const qrBarcode = decodeQrBarcode(Buffer.from(image, "base64"));
+    // Prefer the QR code (decoded client-side at full res) for the barcode; fall
+    // back to the model's reading (เลขทริป / printed code) when QR isn't detected.
     if (qrBarcode) result.barcode = qrBarcode;
 
     return res.status(200).json(result);
