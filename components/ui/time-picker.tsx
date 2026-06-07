@@ -22,8 +22,8 @@ interface TimePickerProps {
 const HOURS = Array.from({ length: 24 }, (_, i) =>
   String(i).padStart(2, "0"),
 );
-const MINUTES = Array.from({ length: 12 }, (_, i) =>
-  String(i * 5).padStart(2, "0"),
+const MINUTES = Array.from({ length: 60 }, (_, i) =>
+  String(i).padStart(2, "0"),
 );
 
 function WheelColumn({
@@ -49,11 +49,12 @@ function WheelColumn({
   return (
     <div
       ref={containerRef}
-      className="h-[220px] w-full overflow-y-auto snap-y snap-mandatory scrollbar-hide"
+      className="h-[220px] w-full overflow-x-hidden overflow-y-auto snap-y snap-mandatory scrollbar-hide touch-pan-y"
       style={{
         scrollbarWidth: "none",
         msOverflowStyle: "none",
         WebkitOverflowScrolling: "touch",
+        overscrollBehaviorX: "none",
       }}
     >
       {/* top spacer */}
@@ -96,10 +97,7 @@ export function TimePicker({
       const parts = value.split(":");
       if (parts.length === 2) {
         setHour(parts[0]);
-        // Snap to nearest 5 min
-        const m = parseInt(parts[1], 10);
-        const snapped = Math.round(m / 5) * 5;
-        setMinute(String(snapped >= 60 ? 55 : snapped).padStart(2, "0"));
+        setMinute(parts[1]);
       }
     }
     setOpen(isOpen);
