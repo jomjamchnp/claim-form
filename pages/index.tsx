@@ -65,7 +65,6 @@ interface ScanResult {
   standby_round: string;
 }
 
-
 type AutofilledKeys = Set<keyof FormValues>;
 
 // ─── Zod Schema ─────────────────────────────────────────────────────────────
@@ -253,9 +252,11 @@ export default function V2() {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!fileInputRef.current) return;
-    fileInputRef.current.value = "";
+    const input = e.target;
+    input.value = "";
     if (!file) return;
+
+    setShowImageSourceDialog(false);
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error("รูปใหญ่เกินไป (สูงสุด 5MB)");
@@ -729,21 +730,25 @@ export default function V2() {
           onChange={handleFileChange}
         />
         {/* Image source picker — bottom sheet */}
-        <Drawer open={showImageSourceDialog} onOpenChange={setShowImageSourceDialog}>
+        <Drawer
+          open={showImageSourceDialog}
+          onOpenChange={setShowImageSourceDialog}
+        >
           <DrawerContent>
             <div className="px-5 pb-6 pt-2">
               <DrawerHeader className="px-0">
-                <DrawerTitle className="text-left text-lg font-bold">สแกนใบงาน</DrawerTitle>
-                <DrawerDescription className="text-left">เลือกวิธีนำเข้ารูปใบงาน</DrawerDescription>
+                <DrawerTitle className="text-left text-lg font-bold">
+                  สแกนใบงาน
+                </DrawerTitle>
+                <DrawerDescription className="text-left">
+                  เลือกวิธีนำเข้ารูปใบงาน
+                </DrawerDescription>
               </DrawerHeader>
               <div className="flex flex-col gap-3 mt-2">
                 <button
                   type="button"
                   className="flex items-center gap-4 rounded-xl border border-input px-4 py-4 text-base font-semibold hover:bg-accent active:bg-accent transition-colors"
-                  onClick={() => {
-                    setShowImageSourceDialog(false);
-                    setTimeout(() => fileInputRef.current?.click(), 400);
-                  }}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <span className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
                     <CameraIcon className="h-5 w-5 text-muted-foreground" />
@@ -753,10 +758,7 @@ export default function V2() {
                 <button
                   type="button"
                   className="flex items-center gap-4 rounded-xl border border-input px-4 py-4 text-base font-semibold hover:bg-accent active:bg-accent transition-colors"
-                  onClick={() => {
-                    setShowImageSourceDialog(false);
-                    setTimeout(() => galleryInputRef.current?.click(), 400);
-                  }}
+                  onClick={() => galleryInputRef.current?.click()}
                 >
                   <span className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
                     <ImageIcon className="h-5 w-5 text-muted-foreground" />
