@@ -739,14 +739,14 @@ export default function V2() {
               <div className="flex flex-col gap-3 mt-2">
                 <button
                   type="button"
-                  className="flex items-center gap-4 rounded-xl bg-brand-navy px-4 py-4 text-base font-semibold text-white active:opacity-90 transition-opacity"
+                  className="flex items-center gap-4 rounded-xl border border-input px-4 py-4 text-base font-semibold hover:bg-accent active:bg-accent transition-colors"
                   onClick={() => {
                     setShowImageSourceDialog(false);
                     setTimeout(() => fileInputRef.current?.click(), 150);
                   }}
                 >
-                  <span className="w-10 h-10 rounded-xl bg-brand-teal flex items-center justify-center shrink-0">
-                    <CameraIcon className="h-5 w-5 text-white" />
+                  <span className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                    <CameraIcon className="h-5 w-5 text-muted-foreground" />
                   </span>
                   ถ่ายรูป
                 </button>
