@@ -41,7 +41,7 @@ function WheelColumn({
   onSelect: (v: string) => void;
 }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const timerRef = React.useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = React.useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Scroll to selected item on mount
   React.useEffect(() => {
