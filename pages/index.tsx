@@ -240,7 +240,7 @@ export default function V2() {
       if (data.valid) {
         setScanToken(data.token ?? null);
       } else {
-        toast.error("❌ รหัสผิด ลองใหม่อีกครั้ง");
+        toast.error("รหัสผิด ลองใหม่อีกครั้ง");
         setPasswordInput("");
       }
     } catch {
