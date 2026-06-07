@@ -742,7 +742,7 @@ export default function V2() {
                   className="flex items-center gap-4 rounded-xl border border-input px-4 py-4 text-base font-semibold hover:bg-accent active:bg-accent transition-colors"
                   onClick={() => {
                     setShowImageSourceDialog(false);
-                    setTimeout(() => fileInputRef.current?.click(), 150);
+                    setTimeout(() => fileInputRef.current?.click(), 400);
                   }}
                 >
                   <span className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
@@ -755,7 +755,7 @@ export default function V2() {
                   className="flex items-center gap-4 rounded-xl border border-input px-4 py-4 text-base font-semibold hover:bg-accent active:bg-accent transition-colors"
                   onClick={() => {
                     setShowImageSourceDialog(false);
-                    setTimeout(() => galleryInputRef.current?.click(), 150);
+                    setTimeout(() => galleryInputRef.current?.click(), 400);
                   }}
                 >
                   <span className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
