@@ -26,6 +26,11 @@ const MINUTES = Array.from({ length: 60 }, (_, i) =>
   String(i).padStart(2, "0"),
 );
 
+const CONTAINER_HEIGHT = 220;
+const ITEM_HEIGHT = 44;
+// Number of items visible above/below center
+const PADDING_ITEMS = Math.floor(CONTAINER_HEIGHT / ITEM_HEIGHT / 2);
+
 function WheelColumn({
   items,
   selected,
@@ -36,20 +41,39 @@ function WheelColumn({
   onSelect: (v: string) => void;
 }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const itemHeight = 44;
+  const timerRef = React.useRef<ReturnType<typeof setTimeout>>();
 
   // Scroll to selected item on mount
   React.useEffect(() => {
     const idx = items.indexOf(selected);
     if (idx >= 0 && containerRef.current) {
-      containerRef.current.scrollTop = idx * itemHeight;
+      containerRef.current.scrollTop = idx * ITEM_HEIGHT;
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Detect which item is in the center after scroll stops
+  const handleScroll = () => {
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      if (!containerRef.current) return;
+      const idx = Math.round(containerRef.current.scrollTop / ITEM_HEIGHT);
+      const clamped = Math.max(0, Math.min(idx, items.length - 1));
+      // Snap to exact position
+      containerRef.current.scrollTo({
+        top: clamped * ITEM_HEIGHT,
+        behavior: "smooth",
+      });
+      if (items[clamped] !== selected) {
+        onSelect(items[clamped]);
+      }
+    }, 80);
+  };
 
   return (
     <div
       ref={containerRef}
-      className="h-[220px] w-full overflow-x-hidden overflow-y-auto snap-y snap-mandatory scrollbar-hide touch-pan-y"
+      onScroll={handleScroll}
+      className="h-[220px] w-full overflow-x-hidden overflow-y-auto scrollbar-hide touch-pan-y"
       style={{
         scrollbarWidth: "none",
         msOverflowStyle: "none",
@@ -57,26 +81,24 @@ function WheelColumn({
         overscrollBehaviorX: "none",
       }}
     >
-      {/* top spacer */}
-      <div style={{ height: itemHeight * 2 }} />
+      {/* top spacer — push first item to center */}
+      <div style={{ height: ITEM_HEIGHT * PADDING_ITEMS }} />
       {items.map((item) => (
-        <button
+        <div
           key={item}
-          type="button"
-          onClick={() => onSelect(item)}
           className={cn(
-            "snap-center flex items-center justify-center w-full text-lg transition-all",
+            "flex items-center justify-center w-full text-lg transition-all select-none",
             item === selected
               ? "text-foreground font-bold scale-110"
               : "text-muted-foreground/50",
           )}
-          style={{ height: itemHeight }}
+          style={{ height: ITEM_HEIGHT }}
         >
           {item}
-        </button>
+        </div>
       ))}
-      {/* bottom spacer */}
-      <div style={{ height: itemHeight * 2 }} />
+      {/* bottom spacer — push last item to center */}
+      <div style={{ height: ITEM_HEIGHT * PADDING_ITEMS }} />
     </div>
   );
 }
