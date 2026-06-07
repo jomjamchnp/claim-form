@@ -10,6 +10,8 @@ import {
   XIcon,
   CheckIcon,
   RotateCcwIcon,
+  CameraIcon,
+  ImageIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,13 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Separator } from "@/components/ui/separator";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -185,6 +194,8 @@ export default function V2() {
   } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [showImageSourceDialog, setShowImageSourceDialog] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -622,7 +633,7 @@ export default function V2() {
                   setScanPhase("idle");
                   setScanImage(null);
                   setScanDraft(null);
-                  fileInputRef.current?.click();
+                  setShowImageSourceDialog(true);
                 }}
               >
                 <RotateCcwIcon className="h-4 w-4 mr-1.5" />
@@ -679,7 +690,7 @@ export default function V2() {
         {/* Scan CTA */}
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => setShowImageSourceDialog(true)}
           className="w-full text-left bg-brand-navy rounded-2xl px-5 py-4 mb-6 flex items-center gap-4 shadow-[0_8px_22px_rgba(21,57,90,.28)] active:opacity-90 transition-opacity"
         >
           <span className="w-12 h-12 rounded-xl bg-brand-teal flex items-center justify-center shrink-0">
@@ -700,13 +711,62 @@ export default function V2() {
             </span>
           </span>
         </button>
+        {/* Camera input */}
         <input
           ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        {/* Gallery input */}
+        <input
+          ref={galleryInputRef}
           type="file"
           accept="image/*"
           className="hidden"
           onChange={handleFileChange}
         />
+        {/* Image source picker — bottom sheet */}
+        <Drawer open={showImageSourceDialog} onOpenChange={setShowImageSourceDialog}>
+          <DrawerContent>
+            <div className="px-5 pb-6 pt-2">
+              <DrawerHeader className="px-0">
+                <DrawerTitle className="text-left text-lg font-bold">สแกนใบงาน</DrawerTitle>
+                <DrawerDescription className="text-left">เลือกวิธีนำเข้ารูปใบงาน</DrawerDescription>
+              </DrawerHeader>
+              <div className="flex flex-col gap-3 mt-2">
+                <button
+                  type="button"
+                  className="flex items-center gap-4 rounded-xl bg-brand-navy px-4 py-4 text-base font-semibold text-white active:opacity-90 transition-opacity"
+                  onClick={() => {
+                    setShowImageSourceDialog(false);
+                    setTimeout(() => fileInputRef.current?.click(), 150);
+                  }}
+                >
+                  <span className="w-10 h-10 rounded-xl bg-brand-teal flex items-center justify-center shrink-0">
+                    <CameraIcon className="h-5 w-5 text-white" />
+                  </span>
+                  ถ่ายรูป
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center gap-4 rounded-xl border border-input px-4 py-4 text-base font-semibold hover:bg-accent active:bg-accent transition-colors"
+                  onClick={() => {
+                    setShowImageSourceDialog(false);
+                    setTimeout(() => galleryInputRef.current?.click(), 150);
+                  }}
+                >
+                  <span className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                  </span>
+                  เลือกจากแกลเลอรี่
+                </button>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
 
         <div className="flex items-center gap-3 mb-6">
           <span className="flex-1 h-px bg-gray-200" />
